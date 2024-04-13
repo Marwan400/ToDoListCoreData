@@ -43,7 +43,7 @@ struct ContentView: View {
             .sheet(isPresented: $isShowingAddNewGoalView){
                 AddNewGoalView()
                     .background(Material.ultraThinMaterial)
-                    .presentationDetents([.medium, .large])
+                    .presentationDetents([.fraction(0.9)])
                     .presentationDragIndicator(.visible)
                     .environment(\.colorScheme, .light)
                     .onAppear{
@@ -58,11 +58,13 @@ struct ContentView: View {
     struct AddNewGoalView: View{
         @State var title: String = ""
         @State var detail: String = ""
+        @Environment(\.presentationMode) var presentationMode
+        @State var dedline = Date()
         var body: some View{
             VStack{
                 HStack{
                     Button{
-                        
+                        presentationMode.wrappedValue.dismiss()
                     } label: {
                         Text("Cancel")
                             .foregroundStyle(.red)
@@ -71,19 +73,36 @@ struct ContentView: View {
                     Spacer()
                 }.padding()
                 
-                TextField("Title", text: $title)
-                    .padding(.horizontal)
-                Divider()
-                    .padding(.horizontal)
+                Group{
+                    TextField("Title", text: $title)
+                        .padding(.horizontal)
+                    Divider()
+                        .padding(.horizontal)
+                    
+                    TextField("Write details", text: $detail)
+                        .padding(.horizontal)
+                    Divider()
+                        .padding(.horizontal)
+                }
                 
-                TextField("Write details", text: $detail)
-                    .padding(.horizontal)
-                Divider()
-                    .padding(.horizontal)
+                DatePicker(selection: $dedline, in: Date()...){
+                    
+                    
+                }.datePickerStyle(.graphical)
+                    
                 
                 Spacer()
                 Text("This is the second view")
                 Spacer()
+                Button{
+                    
+                }label: {
+                    Text("Add New Goal")
+                        .foregroundStyle(.white)
+                        .frame(width: 290, height: 50)
+                        .background(.blue)
+                        .presentationCornerRadius(5)
+                }
                 HStack{Spacer()}
             }
         }
