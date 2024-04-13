@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct ContentView: View {
+    @State var isShowingAddNewGoalView: Bool = true
     var body: some View {
         NavigationStack{
             List{
@@ -22,7 +23,7 @@ struct ContentView: View {
             
             .overlay(alignment: .bottomTrailing) {
                 Button{
-                    
+                    isShowingAddNewGoalView.toggle()
                 } label: {
                     Image(systemName: "plus")
                         .foregroundColor(.gray)
@@ -38,6 +39,54 @@ struct ContentView: View {
             .navigationBarTitleDisplayMode(.large)
             
         }.environment(\.colorScheme, .dark)
+        
+            .sheet(isPresented: $isShowingAddNewGoalView){
+                AddNewGoalView()
+                    .background(Material.ultraThinMaterial)
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+                    .environment(\.colorScheme, .light)
+                    .onAppear{
+                        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene, let controller = windowScene.windows.first?.rootViewController?.presentedViewController else {
+                            return
+                        }
+                        controller.view.backgroundColor = .clear
+                    }
+            }
+    }
+    
+    struct AddNewGoalView: View{
+        @State var title: String = ""
+        @State var detail: String = ""
+        var body: some View{
+            VStack{
+                HStack{
+                    Button{
+                        
+                    } label: {
+                        Text("Cancel")
+                            .foregroundStyle(.red)
+                    }
+                    
+                    Spacer()
+                }.padding()
+                
+                TextField("Title", text: $title)
+                    .padding(.horizontal)
+                Divider()
+                    .padding(.horizontal)
+                
+                TextField("Write details", text: $detail)
+                    .padding(.horizontal)
+                Divider()
+                    .padding(.horizontal)
+                
+                Spacer()
+                Text("This is the second view")
+                Spacer()
+                HStack{Spacer()}
+            }
+        }
     }
 }
 
