@@ -7,13 +7,22 @@
 
 import SwiftUI
 
+struct Goal: Identifiable {
+    let id = UUID().uuidString
+    let title: String
+    let detail: String
+    let deadline: Date
+    var isCompleted: Bool = false
+}
+
 struct ContentView: View {
-    @State var isShowingAddNewGoalView: Bool = true
+    @State var isShowingAddNewGoalView: Bool = false
+    @State var myGoals: [Goal] = []
     var body: some View {
         NavigationStack{
             List{
-                ForEach(/*@START_MENU_TOKEN@*/0 ..< 5/*@END_MENU_TOKEN@*/) { item in
-                    Text("Dummy Data")
+                ForEach(myGoals) { goal in
+                    Text(goal.title)
                         .foregroundStyle(.white)
                         .listRowBackground(Color.gray)
                 }
@@ -41,7 +50,7 @@ struct ContentView: View {
         }.environment(\.colorScheme, .dark)
         
             .sheet(isPresented: $isShowingAddNewGoalView){
-                AddNewGoalView()
+                AddNewGoalView(myGoals: $myGoals)
                     .background(Material.ultraThinMaterial)
                     .presentationDetents([.fraction(0.9)])
                     .presentationDragIndicator(.visible)
@@ -58,6 +67,7 @@ struct ContentView: View {
     struct AddNewGoalView: View{
         @State var title: String = ""
         @State var detail: String = ""
+        @Binding var myGoals: [Goal]
         @Environment(\.presentationMode) var presentationMode
         @State var dedline = Date()
         var body: some View{
@@ -89,13 +99,17 @@ struct ContentView: View {
                     
                     
                 }.datePickerStyle(.graphical)
-                    
+                
                 
                 Spacer()
                 Text("This is the second view")
                 Spacer()
                 Button{
-                    
+                    let myGoalObject = Goal(title: title,
+                                            detail: detail,
+                                            deadline: dedline)
+                    myGoals.append(myGoalObject)
+                    presentationMode.wrappedValue.dismiss()
                 }label: {
                     Text("Add New Goal")
                         .foregroundStyle(.white)
