@@ -7,13 +7,6 @@
 
 import SwiftUI
 
-struct Goal: Identifiable {
-    let id = UUID().uuidString
-    let title: String
-    let detail: String
-    let deadline: Date
-    var isCompleted: Bool = false
-}
 
 struct ContentView: View {
     @State var isShowingAddNewGoalView: Bool = false
@@ -22,7 +15,7 @@ struct ContentView: View {
         NavigationStack{
             List{
                 ForEach(myGoals) { goal in
-                    Text(goal.title)
+                    Text(goal.title ?? "There is no title")
                         .foregroundStyle(.white)
                         .listRowBackground(Color.gray)
                 }
@@ -105,10 +98,7 @@ struct ContentView: View {
                 Text("This is the second view")
                 Spacer()
                 Button{
-                    let myGoalObject = Goal(title: title,
-                                            detail: detail,
-                                            deadline: dedline)
-                    myGoals.append(myGoalObject)
+                    
                     presentationMode.wrappedValue.dismiss()
                 }label: {
                     Text("Add New Goal")
