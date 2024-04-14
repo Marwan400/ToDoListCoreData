@@ -126,7 +126,7 @@ struct AddNewGoalView: View {
                     presentationMode.wrappedValue.dismiss()
                 }) {
                     Text("Cancel")
-                        .foregroundColor(.red)
+                        .foregroundColor((Color(hex: "607274")))
                 }
                 .padding()
             }
