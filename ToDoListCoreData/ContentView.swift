@@ -9,15 +9,57 @@ import SwiftUI
 
 
 struct ContentView: View {
+    @Environment(\.managedObjectContext) private var viewContext
     @State var isShowingAddNewGoalView: Bool = false
-    @State var myGoals: [Goal] = []
+    
+    @FetchRequest(sortDescriptors: [NSSortDescriptor(keyPath: \Goal.deadline,
+                                                     ascending: false)], animation: .default) private var goals: FetchedResults<Goal>
+    
     var body: some View {
         NavigationStack{
             List{
-                ForEach(myGoals) { goal in
-                    Text(goal.title ?? "There is no title")
-                        .foregroundStyle(.white)
-                        .listRowBackground(Color.gray)
+                ForEach(goals.filter{$0.isDone == false}) { goal in
+                    HStack{
+                        Button{
+                            goal.isDone.toggle()
+                            do {
+                                try viewContext.save()
+                            } catch {
+                                print("Something went wrong")
+                            }
+                        }label: {
+                            Image(systemName: goal.isDone ? "checkmark" : "square")
+                        }
+                        VStack(alignment: .leading){
+                            Text(goal.title ?? "There is no title")
+                            Text(goal.detail ?? "There is no title")
+                            Text("\((goal.deadline?.formatted(date: .numeric, time: .shortened))!)")
+                        }
+                    }
+                    .foregroundStyle(.white)
+                    .listRowBackground(Color.gray)
+                }
+                
+                ForEach(goals.filter{$0.isDone == true}) { goal in
+                    HStack{
+                        Button{
+                            goal.isDone.toggle()
+                            do {
+                                try viewContext.save()
+                            } catch {
+                                print("Something went wrong")
+                            }
+                        }label: {
+                            Image(systemName: goal.isDone ? "checkmark" : "square")
+                        }
+                        VStack(alignment: .leading){
+                            Text(goal.title ?? "There is no title")
+                            Text(goal.detail ?? "There is no title")
+                            Text("\((goal.deadline?.formatted(date: .numeric, time: .shortened))!)")
+                        }
+                    }
+                    .foregroundStyle(.white)
+                    .listRowBackground(Color.gray)
                 }
             }
             .scrollContentBackground(.hidden)
@@ -43,7 +85,7 @@ struct ContentView: View {
         }.environment(\.colorScheme, .dark)
         
             .sheet(isPresented: $isShowingAddNewGoalView){
-                AddNewGoalView(myGoals: $myGoals)
+                AddNewGoalView()
                     .background(Material.ultraThinMaterial)
                     .presentationDetents([.fraction(0.9)])
                     .presentationDragIndicator(.visible)
@@ -58,9 +100,9 @@ struct ContentView: View {
     }
     
     struct AddNewGoalView: View{
+        @Environment(\.managedObjectContext) private var viewContext
         @State var title: String = ""
         @State var detail: String = ""
-        @Binding var myGoals: [Goal]
         @Environment(\.presentationMode) var presentationMode
         @State var dedline = Date()
         var body: some View{
@@ -98,6 +140,17 @@ struct ContentView: View {
                 Text("This is the second view")
                 Spacer()
                 Button{
+                    let myObject = Goal(context: viewContext)
+                    myObject.title = title
+                    myObject.deadline = dedline
+                    myObject.detail = detail
+                    myObject.isDone = false
+                    
+                    do {
+                        try viewContext.save()
+                    } catch {
+                        print("Something went wrong")
+                    }
                     
                     presentationMode.wrappedValue.dismiss()
                 }label: {
@@ -115,4 +168,5 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
+        .environment(\.managedObjectContext, TheDB.shared.container.viewContext)
 }
