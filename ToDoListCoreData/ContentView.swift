@@ -1,23 +1,61 @@
 import SwiftUI
+import CoreData
+
+enum SortingType: String, CaseIterable {
+    case new
+    case old
+    case completed
+}
 
 struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @State private var isShowingAddNewGoalView = false
-    
+
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \Goal.deadline, ascending: false)],
         animation: .default
     ) private var goals: FetchedResults<Goal>
-    
+
+    @State private var sortingType: SortingType = .old
+
+    var sortedArray: [Goal] {
+        switch sortingType {
+        case .new:
+            return goals.sorted { $0.deadline! > $1.deadline! }
+        case .old:
+            return goals.sorted { $0.deadline! < $1.deadline! }
+        case .completed:
+            let sortedGoals = goals.sorted { goal1, goal2 in
+                if goal1.isDone == goal2.isDone {
+                    return goal1.deadline! < goal2.deadline!
+                } else {
+                    return goal1.isDone && !goal2.isDone
+                }
+            }
+            return sortedGoals.filter { $0.isDone }
+        }
+    }
+
     var body: some View {
         NavigationView {
             ZStack {
                 Color(hex: "607274")
                     .edgesIgnoringSafeArea(.all)
-                
+
                 VStack(spacing: 10) {
+                    
+                    Picker(selection: $sortingType.animation(), label: Text("Sort By")) {
+                        ForEach(SortingType.allCases, id: \.self) { sortType in
+                            Text(sortType.rawValue.capitalized)
+                                .tag(sortType)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                
+                    .padding()
+
                     List {
-                        ForEach(goals.sorted { !$0.isDone && $1.isDone }) { goal in
+                        ForEach(sortedArray) { goal in
                             GoalListItemView(goal: goal)
                                 .foregroundColor(.white)
                                 .listRowBackground(Color(hex: "607274").opacity(0.8))
@@ -36,7 +74,7 @@ struct ContentView: View {
                     .navigationBarTitleDisplayMode(.large)
                     .listStyle(PlainListStyle())
                     .padding(.bottom)
-                    
+
                     Button(action: {
                         isShowingAddNewGoalView.toggle()
                     }) {
@@ -56,11 +94,12 @@ struct ContentView: View {
             }
             .sheet(isPresented: $isShowingAddNewGoalView) {
                 AddNewGoalView()
+                
             }
         }
         .environment(\.colorScheme, .dark)
     }
-    
+
     private func deleteGoal(_ goal: Goal) {
         viewContext.delete(goal)
         do {
@@ -80,7 +119,7 @@ struct ContentView_Previews: PreviewProvider {
 
 struct GoalListItemView: View {
     @ObservedObject var goal: Goal
-    
+
     var body: some View {
         HStack {
             Button {
@@ -117,7 +156,7 @@ struct AddNewGoalView: View {
     @State private var detail = ""
     @Environment(\.presentationMode) var presentationMode
     @State private var deadline = Date()
-    
+
     var body: some View {
         VStack {
             HStack {
@@ -126,28 +165,32 @@ struct AddNewGoalView: View {
                     presentationMode.wrappedValue.dismiss()
                 }) {
                     Text("Cancel")
-                        .foregroundColor(.red)
+                        .foregroundColor((Color(hex: "607274")))
                 }
                 .padding()
             }
-            
+
             Group {
                 TextField("Title", text: $title)
-                    .padding(.horizontal)
+                    .padding()
+                    .background(Color.white)
+                    .cornerRadius(8)
                 Divider()
                     .padding(.horizontal)
                 TextField("Write details", text: $detail)
-                    .padding(.horizontal)
+                    .padding()
+                    .background(Color.white)
+                    .cornerRadius(8)
                 Divider()
                     .padding(.horizontal)
             }
-            
+
             ZStack {
                 Color(hex: "CCD3CA")
                     .opacity(0.8)
                     .cornerRadius(16)
                     .padding()
-                
+
                 DatePicker("Deadline", selection: $deadline, in: Date()...)
                     .datePickerStyle(GraphicalDatePickerStyle())
                     .accentColor(Color(hex: "607274"))
@@ -159,7 +202,7 @@ struct AddNewGoalView: View {
                     .padding()
             }
             .padding()
-            
+
             Button(action: {
                 addNewGoal()
             }) {
@@ -175,14 +218,14 @@ struct AddNewGoalView: View {
         .background(Color(hex: "CCD3CA"))
         .edgesIgnoringSafeArea(.bottom)
     }
-    
+
     private func addNewGoal() {
         let newGoal = Goal(context: viewContext)
         newGoal.title = title
         newGoal.deadline = deadline
         newGoal.detail = detail
         newGoal.isDone = false
-        
+
         do {
             try viewContext.save()
             presentationMode.wrappedValue.dismiss()
@@ -196,13 +239,13 @@ extension Color {
     init(hex: String) {
         let scanner = Scanner(string: hex)
         var rgb: UInt64 = 0
-        
+
         scanner.scanHexInt64(&rgb)
-        
+
         let red = Double((rgb & 0xFF0000) >> 16) / 255.0
         let green = Double((rgb & 0x00FF00) >> 8) / 255.0
         let blue = Double(rgb & 0x0000FF) / 255.0
-        
+
         self.init(red: red, green: green, blue: blue)
     }
 }
