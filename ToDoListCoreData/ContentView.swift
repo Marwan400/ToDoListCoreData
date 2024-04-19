@@ -10,13 +10,12 @@ enum SortingType: String, CaseIterable {
 struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @State private var isShowingAddNewGoalView = false
+    @State private var sortingType: SortingType = .old
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \Goal.deadline, ascending: false)],
         animation: .default
     ) private var goals: FetchedResults<Goal>
-
-    @State private var sortingType: SortingType = .old
 
     var sortedArray: [Goal] {
         switch sortingType {
@@ -25,14 +24,13 @@ struct ContentView: View {
         case .old:
             return goals.sorted { $0.deadline! < $1.deadline! }
         case .completed:
-            let sortedGoals = goals.sorted { goal1, goal2 in
+            return goals.sorted { goal1, goal2 in
                 if goal1.isDone == goal2.isDone {
                     return goal1.deadline! < goal2.deadline!
                 } else {
                     return goal1.isDone && !goal2.isDone
                 }
             }
-            return sortedGoals.filter { $0.isDone }
         }
     }
 
@@ -43,15 +41,13 @@ struct ContentView: View {
                     .edgesIgnoringSafeArea(.all)
 
                 VStack(spacing: 10) {
-                    
-                    Picker(selection: $sortingType.animation(), label: Text("Sort By")) {
+                    Picker("Sort By", selection: $sortingType) {
                         ForEach(SortingType.allCases, id: \.self) { sortType in
                             Text(sortType.rawValue.capitalized)
                                 .tag(sortType)
                         }
                     }
-                    .pickerStyle(.segmented)
-                
+                    .pickerStyle(SegmentedPickerStyle())
                     .padding()
 
                     List {
@@ -93,8 +89,8 @@ struct ContentView: View {
                 .padding()
             }
             .sheet(isPresented: $isShowingAddNewGoalView) {
-                AddNewGoalView()
-                
+                AddNewGoalView(isPresented: $isShowingAddNewGoalView)
+                    .environment(\.managedObjectContext, viewContext)
             }
         }
         .environment(\.colorScheme, .dark)
@@ -156,6 +152,9 @@ struct AddNewGoalView: View {
     @State private var detail = ""
     @Environment(\.presentationMode) var presentationMode
     @State private var deadline = Date()
+    @Binding var isPresented: Bool
+    @State private var showAlert = false
+    @State private var alertMessage = ""
 
     var body: some View {
         VStack {
@@ -171,13 +170,13 @@ struct AddNewGoalView: View {
             }
 
             Group {
-                TextField("Title", text: $title)
+                TextField("Enter title", text: $title)
                     .padding()
                     .background(Color.white)
                     .cornerRadius(8)
                 Divider()
                     .padding(.horizontal)
-                TextField("Write details", text: $detail)
+                TextField("Enter details", text: $detail)
                     .padding()
                     .background(Color.white)
                     .cornerRadius(8)
@@ -204,7 +203,15 @@ struct AddNewGoalView: View {
             .padding()
 
             Button(action: {
-                addNewGoal()
+                if title.isEmpty {
+                    alertMessage = "Please enter a title."
+                    showAlert = true
+                } else if detail.isEmpty {
+                    alertMessage = "Please enter details."
+                    showAlert = true
+                } else {
+                    addNewGoal()
+                }
             }) {
                 Text("Add New Goal")
                     .foregroundColor(Color.white)
@@ -213,6 +220,9 @@ struct AddNewGoalView: View {
                     .background(Color(hex: "607274"))
                     .cornerRadius(8)
                     .padding()
+            }
+            .alert(isPresented: $showAlert) {
+                Alert(title: Text("Warning"), message: Text(alertMessage), dismissButton: .default(Text("OK")))
             }
         }
         .background(Color(hex: "CCD3CA"))
