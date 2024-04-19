@@ -18,22 +18,22 @@ struct ContentView: View {
     ) private var goals: FetchedResults<Goal>
 
     var sortedArray: [Goal] {
-        switch sortingType {
-        case .new:
-            return goals.sorted { $0.deadline! > $1.deadline! }
-        case .old:
-            return goals.sorted { $0.deadline! < $1.deadline! }
-        case .completed:
-            return goals.sorted { goal1, goal2 in
-                if goal1.isDone == goal2.isDone {
-                    return goal1.deadline! < goal2.deadline!
-                } else {
-                    return goal1.isDone && !goal2.isDone
+            switch sortingType {
+            case .new:
+                return goals.sorted { $0.deadline! > $1.deadline! }
+            case .old:
+                return goals.sorted { $0.deadline! < $1.deadline! }
+            case .completed:
+                let sortedGoals = goals.sorted { goal1, goal2 in
+                    if goal1.isDone == goal2.isDone {
+                        return goal1.deadline! < goal2.deadline!
+                    } else {
+                        return goal1.isDone && !goal2.isDone
+                    }
                 }
+                return sortedGoals.filter { $0.isDone }
             }
         }
-    }
-
     var body: some View {
         NavigationView {
             ZStack {
